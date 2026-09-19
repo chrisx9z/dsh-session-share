@@ -10,7 +10,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis';
 import type { CommandResult } from '@deepseek-ai/dsh-commands';
-export declare const name = "session-share";
+export declare const name = "session-chat-share";
 /** The command plane plus the browser transport carrying the payload route. */
 export declare const inject: string[];
 /** Stable browser route serving one session's shareable messages as JSON. */

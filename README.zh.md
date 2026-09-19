@@ -1,4 +1,4 @@
-# dsh-session-share
+# dsh-session-chat-share
 
 [English](README.md) | 中文
 
@@ -22,13 +22,13 @@
 **npm**（推荐——插件市场优先 npm 源）：
 
 ```sh
-dsh plugin --profile demo add dsh-session-share
+dsh plugin --profile demo add dsh-session-chat-share
 ```
 
 **GitHub**（备选；附带相同的预构建产物）：
 
 ```sh
-dsh plugin --profile demo add github:chrisx9z/dsh-session-share#v1.4.2
+dsh plugin --profile demo add github:chrisx9z/dsh-session-chat-share#v1.4.3
 ```
 
 包内已带**预构建产物**（`lib/`——host 与 browser 两个半区），两种安装都不需要构建步骤。发布版本以 `v1.x.y` 标记；如需可复现安装，可固定 tag 或 commit。

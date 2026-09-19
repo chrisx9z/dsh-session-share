@@ -13,7 +13,7 @@ declare module '@deepseek-ai/cordis' {
 }
 declare module '@deepseek-ai/dsh-client-ui-slots' {
     interface LocaleNamespaceMap {
-        'session-share': SessionChatShareKey;
+        'session-chat-share': SessionChatShareKey;
     }
 }
 export type { ChatShareEntry, ChatShareState, ShareFormat, ShareMessage } from './controller.ts';

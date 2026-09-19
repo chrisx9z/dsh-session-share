@@ -1,7 +1,7 @@
 import type { ShareLabels } from './render.ts';
 /** Locale namespace owned by the chat-segment share browser dialog. */
-export declare const NS = "session-share";
-/** Simplified-Chinese session-share strings. */
+export declare const NS = "session-chat-share";
+/** Simplified-Chinese session-chat-share strings. */
 export declare const zh: {
     readonly 'header.label': "分享";
     readonly 'dialog.title': "分享聊天片段";
@@ -39,7 +39,7 @@ export declare const zh: {
     readonly 'role.subagent': "子代理";
     readonly 'artifact.sharedFrom': "分享自 DeepSeek Harness";
 };
-/** English session-share strings. */
+/** English session-chat-share strings. */
 export declare const en: Record<keyof typeof zh, string>;
 /** Stable locale keys consumed by the shared modal. */
 export type SessionChatShareKey = keyof typeof zh;

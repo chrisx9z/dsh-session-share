@@ -1,4 +1,4 @@
-# dsh-session-share
+# dsh-session-chat-share
 
 English | [中文](README.zh.md)
 
@@ -47,13 +47,13 @@ utilities slot. Harness `0.1.0-rc.x` needs the previous `dsh-chat-share` package
 **npm** (preferred — the Plugin Market prefers npm sources):
 
 ```sh
-dsh plugin --profile demo add dsh-session-share
+dsh plugin --profile demo add dsh-session-chat-share
 ```
 
 **GitHub** (alternative; ships the same prebuilt artifacts):
 
 ```sh
-dsh plugin --profile demo add github:chrisx9z/dsh-session-share#v1.4.2
+dsh plugin --profile demo add github:chrisx9z/dsh-session-chat-share#v1.4.3
 ```
 
 The package ships **prebuilt artifacts** (`lib/` — host and browser halves), so neither install
