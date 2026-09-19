@@ -14,7 +14,7 @@ where both halves are built and tested.
 
 Compatibility: **DeepSeek Harness 0.1.6-alpha.2 or later**. The plugin reads session data through
 the host's session-query service and one payload route, and contributes to the Session Header's
-utilities slot. For older harness versions (0.1.0-rc.x), use `dsh-session-share@1.3.0`.
+utilities slot. Harness `0.1.0-rc.x` needs the previous `dsh-chat-share` package instead (its last compatible release is `dsh-chat-share@1.3.0`).
 
 ## What it does
 
@@ -53,7 +53,7 @@ dsh plugin --profile demo add dsh-session-share
 **GitHub** (alternative; ships the same prebuilt artifacts):
 
 ```sh
-dsh plugin --profile demo add github:chrisx9z/dsh-session-share#v1.4.0
+dsh plugin --profile demo add github:chrisx9z/dsh-session-share#v1.4.2
 ```
 
 The package ships **prebuilt artifacts** (`lib/` — host and browser halves), so neither install

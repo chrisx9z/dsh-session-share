@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-share",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Share a selected range of chat messages as Markdown, HTML, TXT, or PNG (Web /share command, Session-header dialog, redaction, tool calls, subagent conversations, auto-save)",
   "keywords": ["dsh-plugin", "deepseek-harness", "plugin", "chat", "share", "export", "markdown", "png"],
   "type": "module",

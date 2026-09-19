@@ -6,7 +6,7 @@
 
 本仓库是该插件的**独立分发版**：host 与 browser 两个半区均以预构建产物（`lib/`）随包发布，可通过 `dsh plugin add` 或插件市场安装。参考实现位于 harness 仓库的 `packages/session-query/session-chat-share`，两个半区在那里构建并通过测试。
 
-兼容性：**DeepSeek Harness 0.1.6-alpha.2 或更高版本**。插件通过 host 的 session-query 服务与一条载荷路由读取会话数据，并把控件贡献到 Session Header 的 utilities 槽位。更早的 harness 版本（0.1.0-rc.x）请使用 `dsh-session-share@1.3.0`。
+兼容性：**DeepSeek Harness 0.1.6-alpha.2 或更高版本**。插件通过 host 的 session-query 服务与一条载荷路由读取会话数据，并把控件贡献到 Session Header 的 utilities 槽位。更早的 harness 版本（0.1.0-rc.x）请改用此前的 `dsh-chat-share` 包（最后兼容版本为 `dsh-chat-share@1.3.0`）。
 
 ## 功能
 
@@ -28,7 +28,7 @@ dsh plugin --profile demo add dsh-session-share
 **GitHub**（备选；附带相同的预构建产物）：
 
 ```sh
-dsh plugin --profile demo add github:chrisx9z/dsh-session-share#v1.4.0
+dsh plugin --profile demo add github:chrisx9z/dsh-session-share#v1.4.2
 ```
 
 包内已带**预构建产物**（`lib/`——host 与 browser 两个半区），两种安装都不需要构建步骤。发布版本以 `v1.x.y` 标记；如需可复现安装，可固定 tag 或 commit。

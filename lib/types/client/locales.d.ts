@@ -1,3 +1,4 @@
+import type { ShareLabels } from './render.ts';
 /** Locale namespace owned by the chat-segment share browser dialog. */
 export declare const NS = "session-share";
 /** Simplified-Chinese session-share strings. */
@@ -42,4 +43,9 @@ export declare const zh: {
 export declare const en: Record<keyof typeof zh, string>;
 /** Stable locale keys consumed by the shared modal. */
 export type SessionChatShareKey = keyof typeof zh;
+/**
+ * English artifact vocabulary for renderers invoked without explicit labels.
+ * Derived from the dictionary so translated copy lives only in this file.
+ */
+export declare const FALLBACK_LABELS: ShareLabels;
 //# sourceMappingURL=locales.d.ts.map
