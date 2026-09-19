@@ -1,37 +1,39 @@
 {
-  "name": "dsh-chat-share",
-  "version": "1.3.0",
-  "description": "Share a selected range of chat messages as Markdown, HTML, or plain text (Web /share command, Header button, sidebar ... menu, redaction, auto-save)",
+  "name": "dsh-session-share",
+  "version": "1.4.0",
+  "description": "Share a selected range of chat messages as Markdown, HTML, TXT, or PNG (Web /share command, Session-header dialog, redaction, tool calls, subagent conversations, auto-save)",
+  "keywords": ["dsh-plugin", "deepseek-harness", "plugin", "chat", "share", "export", "markdown", "png"],
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
   "exports": {
     ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
-    "./invariant": { "types": "./lib/types/invariant.d.ts", "default": "./lib/invariant.js" },
     "./client": { "types": "./lib/types/client/index.d.ts", "default": "./lib/client.js" },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
-  "files": ["lib", "cordis.patch.yml", "README.md", "LICENSE"],
+  "files": ["lib", "cordis.patch.yml", "README.md", "README.zh.md", "LICENSE"],
   "scripts": {
     "test": "echo \"Run the package tests inside a deepseek-harness checkout; see README.md\" && exit 0"
   },
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": ">=0.0.1-rc.1 <0.2.0",
-    "@deepseek-ai/dsh-commands": ">=0.0.1-rc.1 <0.2.0"
+    "@deepseek-ai/cordis": ">=0.0.1-rc.1",
+    "@deepseek-ai/dsh-commands": ">=0.0.1-rc.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": { "optional": true },
+    "@deepseek-ai/dsh-commands": { "optional": true }
   },
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" },
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-api-remotes",
-        "@deepseek-ai/dsh-client-connection",
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-commands",
         "@deepseek-ai/dsh-client-ui-conversation",
-        "@deepseek-ai/dsh-client-ui-workspace"
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-session"
       ],
       "platform": "web"
     }

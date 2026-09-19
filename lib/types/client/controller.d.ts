@@ -1,18 +1,28 @@
-/** Browser state and actions for sharing a selected range of chat messages. */
-import { type SessionId, type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client';
-import type { HistoryEntry } from '@deepseek-ai/dsh-api-remotes/client';
-import { type ShareLabels, type ShareMeta } from './render.ts';
+/**
+ * Browser state and actions for sharing a selected range of chat messages.
+ *
+ * Every row comes from one host payload read (`/api/session.share`), so the
+ * dialog is independent of what the browser has paged into the transcript and
+ * an export covers the whole session even after a reload.
+ */
+import { type SnapshotStore } from '@deepseek-ai/dsh-client-store';
+import type { SessionId } from '@deepseek-ai/dsh-session/types';
+import { type ShareLabels } from './render.ts';
 /** Output formats the shared artifact can take. */
 export type ShareFormat = 'markdown' | 'html' | 'txt' | 'png';
-/** One session image referenced by a message, resolved lazily for HTML exports. */
+/** One session image referenced by a message; `data` holds inlined base64 when the host sent it. */
 export interface ShareImage {
+    /** Durable attachment identity (the HTML export keys embedded images by it). */
     readonly attachmentId: string;
     readonly mediaType: string;
+    /** Original display name, when the attachment kept one. */
     readonly name?: string;
+    /** Canonical base64 bytes, or null when the host did not inline this image. */
+    readonly data: string | null;
 }
 /** One shareable row on the ordered chat surface. */
 export interface ShareMessage {
-    /** Durable event seq the row came from. */
+    /** Durable event seq the row came from (-1 for a subagent header row). */
     readonly seq: number;
     readonly role: 'user' | 'assistant' | 'tool' | 'subagent';
     /** Text blocks joined verbatim; `[image]` when the message carried only images. */
@@ -22,14 +32,36 @@ export interface ShareMessage {
     /** Image blocks attached to this message (HTML exports embed them). */
     readonly images?: readonly ShareImage[];
 }
+/** One message as the host payload carries it. */
+export interface SharePayloadMessage {
+    readonly seq: number;
+    readonly role: 'user' | 'assistant' | 'tool' | 'subagent';
+    readonly time: number;
+    readonly text: string;
+    readonly images: readonly ShareImage[];
+    /** Set only on items read from a subagent child conversation. */
+    readonly child: {
+        readonly sessionId: string;
+        readonly title: string;
+    } | null;
+}
+/** One session's host payload. */
+export interface SharePayload {
+    readonly sessionId: string;
+    readonly title: string | null;
+    readonly cwd: string | null;
+    readonly messages: readonly SharePayloadMessage[];
+}
+/** Reads one session's share payload; wired to the host route by the client plugin. */
+export type PayloadFetcher = (sessionId: SessionId, signal: AbortSignal) => Promise<SharePayload>;
+/** Rasterize a detached artifact node to a PNG data URL; wired to `html-to-image`. */
+export type PngConverter = (node: HTMLElement) => Promise<string>;
 /** One Session's share-dialog state. */
 export interface ChatShareEntry {
     readonly open: boolean;
-    /** History pages are still being read. */
+    /** The host payload is still being read. */
     readonly loading: boolean;
-    /** Raw chronological history entries the message list is rebuilt from. */
-    readonly raw: readonly HistoryEntry[];
-    /** Shareable rows in chronological order (newest last). */
+    /** Shareable rows in chronological order (newest last), honoring the row options. */
     readonly messages: readonly ShareMessage[];
     /** Inclusive range start index into `messages` (single-select mode). */
     readonly from: number;
@@ -57,42 +89,7 @@ export interface ChatShareEntry {
 export interface ChatShareState {
     bySession: Record<string, ChatShareEntry | undefined>;
 }
-/** One `session.history` page as the controller reads it. */
-export interface HistoryPage {
-    readonly events: readonly HistoryEntry[];
-    readonly hasMore: boolean;
-}
-/** Pages the controller reads; wired to `session.history` by the client plugin. */
-export type HistoryReader = (sessionId: SessionId, beforeSeq: number | undefined, maxMessages: number) => Promise<HistoryPage>;
-/** Resolve one session image to its base64 payload; wired to `session.attachment`. */
-export type AttachmentReader = (sessionId: SessionId, attachmentId: string) => Promise<{
-    data: string;
-    mediaType: string;
-}>;
-/** Read optional artifact header facts (title, model); wired by the client plugin. */
-export type MetaReader = (sessionId: SessionId) => Promise<ShareMeta>;
-/** One session-backed subagent child (from `subagents.list`). */
-export interface SubagentChild {
-    readonly childSessionId: string;
-    readonly title?: string;
-}
-/** List a Session's direct subagent children; wired to `subagents.list`. */
-export type SubagentReader = (parentSessionId: SessionId) => Promise<SubagentChild[]>;
-/** Read one child's message tail; wired to `subagents.history`. */
-export type ChildHistoryReader = (parentSessionId: SessionId, childSessionId: string) => Promise<readonly HistoryEntry[]>;
-/** Rasterize a detached artifact node to a PNG data URL; wired to `html-to-image`. */
-export type PngConverter = (node: HTMLElement) => Promise<string>;
-/** The narrow content-block view the share builder reads (type-only, no cross-package value import). */
-export interface ShareContentBlock {
-    readonly type: string;
-    readonly text?: string;
-    readonly attachment?: {
-        readonly attachmentId?: string;
-        readonly mediaType?: string;
-        readonly name?: string;
-    };
-}
-/** Cap on collected share messages, so a huge session cannot stall the dialog. */
+/** Cap on rows the dialog lists, so a huge session cannot stall the modal. */
 export declare const SHARE_MAX_MESSAGES = 300;
 /** Known controller error codes the dialog localizes; anything else is shown raw. */
 export declare const CHAT_SHARE_ERROR: {
@@ -100,163 +97,134 @@ export declare const CHAT_SHARE_ERROR: {
     readonly downloadFailed: "download-failed";
 };
 /**
- * Split a message's content into share text and image references.
- * @param content - the message's model-facing blocks.
- * @returns the share text ('' when nothing shareable) and the image refs.
+ * Read one session's share payload from the host route.
+ * @param sessionId - session whose messages are shared.
+ * @param signal - caller cancellation.
+ * @returns the parsed payload.
+ * @throws when the host route reports a failure.
  */
-export declare function shareMessageParts(content: readonly ShareContentBlock[]): {
-    text: string;
-    images: ShareImage[];
-};
+export declare function fetchSharePayload(sessionId: SessionId, signal: AbortSignal): Promise<SharePayload>;
 /**
- * Fold history entries (chronological) into shareable rows: user/assistant
- * messages with their image refs, optional tool-call rows, newest last.
- * Tool results, boundary markers, and surface-replacing compaction copies are
- * excluded; messages with no shareable text are dropped.
- * @param events - history entries in log order.
- * @param options - include tool-call rows when enabled.
- * @returns share rows in the same order.
+ * Hand a Blob to the browser download manager through an object URL.
+ * @param blob - artifact bytes.
+ * @param filename - browser download filename.
  */
-export declare function buildShareMessages(events: readonly HistoryEntry[], options?: {
-    includeTools?: boolean;
-}): ShareMessage[];
-/** Hand a Blob to the browser download manager through an object URL. */
 export declare function saveBlob(blob: Blob, filename: string): void;
 /**
- * Owns one in-flight history load per Session and publishes share-dialog state.
+ * Build the dialog rows for one payload, honoring the row options.
+ * @param payload - host payload with parent and subagent items.
+ * @param includeTools - keep tool-call rows.
+ * @param includeSubagents - keep subagent header and child rows.
+ * @returns every shareable row in payload order.
  */
+export declare function shareRows(payload: SharePayload, includeTools: boolean, includeSubagents: boolean): ShareMessage[];
+/** Owns one in-flight payload read per Session and publishes dialog state. */
 export declare class ChatShareController {
-    private readonly reader;
+    private readonly fetchPayload;
     private readonly clipboard;
     private readonly save;
-    private readonly attachments?;
-    private readonly meta?;
     private readonly labels?;
-    private readonly subagents?;
-    private readonly childHistory?;
     private readonly toPng?;
-    /** uSES-safe state source shared by every Session-scoped dialog contribution. */
+    /** uSES-safe state source shared by every Session-scoped contribution. */
     readonly store: SnapshotStore<ChatShareState>;
     private readonly active;
+    private readonly payloads;
     private disposed;
     /**
-     * @param reader - paged `session.history` reader (tail page when `beforeSeq` is absent).
+     * @param fetchPayload - host payload reader.
      * @param clipboard - clipboard writer returning whether the write landed.
      * @param save - browser save operation for the generated artifact Blob.
-     * @param attachments - optional `session.attachment` reader for HTML image embedding.
-     * @param meta - optional artifact header facts reader (title, model).
      * @param labels - optional live artifact vocabulary (follows the UI locale).
-     * @param subagents - optional `subagents.list` reader for child conversations.
-     * @param childHistory - optional `subagents.history` reader (one message tail per child).
-     * @param toPng - optional `html-to-image` rasterizer for PNG downloads.
+     * @param toPng - optional rasterizer for PNG downloads.
      */
-    constructor(reader: HistoryReader, clipboard?: (text: string) => Promise<boolean>, save?: (blob: Blob, filename: string) => void, attachments?: AttachmentReader | undefined, meta?: MetaReader | undefined, labels?: (() => ShareLabels) | undefined, subagents?: SubagentReader | undefined, childHistory?: ChildHistoryReader | undefined, toPng?: PngConverter | undefined);
+    constructor(fetchPayload?: PayloadFetcher, clipboard?: (text: string) => Promise<boolean>, save?: (blob: Blob, filename: string) => void, labels?: (() => ShareLabels) | undefined, toPng?: PngConverter | undefined);
     /**
-     * Open (or reopen) one Session's share dialog; concurrent gestures share one load.
+     * Open (or reopen) one Session's share dialog; concurrent gestures share one read.
      * @param sessionId - Session whose chat segment is shared.
      * @returns after the dialog state settles (open, loaded, or failed).
      */
     open(sessionId: SessionId): Promise<void>;
     /**
-     * Close one Session's dialog, keeping its loaded messages for the next open.
-     * @param sessionId - Session whose modal closes.
-     */
-    dismiss(sessionId: SessionId): void;
-    /**
-     * Download the Session's whole shareable chat as plain text without opening
-     * the dialog (the sidebar `...` menu action). Joins an in-flight history
-     * load instead of starting a second one.
+     * Save the whole chat as one plain-text file, without opening the dialog.
      * @param sessionId - Session whose chat is saved.
-     * @param lastN - when given, save only the newest N messages.
-     * @returns after the browser save starts; load failures publish the error.
+     * @param lastN - keep only the newest n rows; the whole chat when absent.
+     * @returns after the browser save starts or the failure is published.
      */
     saveTxt(sessionId: SessionId, lastN?: number): Promise<void>;
     /**
-     * Select the inclusive message range, clamping and normalizing the bounds.
+     * Close one Session's dialog without cancelling an in-flight read.
+     * @param sessionId - Session whose dialog closes.
+     */
+    dismiss(sessionId: SessionId): void;
+    /**
+     * Set the inclusive single-select range.
      * @param sessionId - Session owning the dialog.
-     * @param from - range start index.
-     * @param to - range end index.
+     * @param from - start index.
+     * @param to - end index.
      */
     setRange(sessionId: SessionId, from: number, to: number): void;
     /**
-     * Switch the output format.
+     * Choose the artifact format.
      * @param sessionId - Session owning the dialog.
-     * @param format - Markdown, HTML, or TXT.
+     * @param format - next format.
      */
     setFormat(sessionId: SessionId, format: ShareFormat): void;
     /**
-     * Toggle best-effort redaction of the rendered artifacts.
+     * Toggle best-effort redaction.
      * @param sessionId - Session owning the dialog.
-     * @param redact - mask credential shapes and local paths.
+     * @param redact - next redaction state.
      */
     setRedact(sessionId: SessionId, redact: boolean): void;
     /**
-     * Toggle tool-call rows in the list and artifacts (rebuilt from raw history).
+     * Toggle tool-call rows.
      * @param sessionId - Session owning the dialog.
-     * @param includeTools - show tool-call rows.
+     * @param includeTools - next tool-row state.
      */
     setIncludeTools(sessionId: SessionId, includeTools: boolean): void;
     /**
-     * Toggle multi-select mode: the export becomes the union of chosen rows
-     * instead of the contiguous range. Entering the mode seeds the selection
-     * with the current range; leaving it clears the selection.
+     * Toggle subagent descendant rows.
      * @param sessionId - Session owning the dialog.
-     * @param multiMode - export the selected rows.
+     * @param includeSubagents - next subagent-row state.
+     * @returns after the rebuilt rows are published.
+     */
+    setIncludeSubagents(sessionId: SessionId, includeSubagents: boolean): Promise<void>;
+    /**
+     * Toggle multi-select mode; leaving it clears the selection.
+     * @param sessionId - Session owning the dialog.
+     * @param multiMode - next mode.
      */
     setMultiMode(sessionId: SessionId, multiMode: boolean): void;
     /**
-     * Replace the multi-select row set (indices into `messages`, deduplicated).
+     * Replace the multi-select membership.
      * @param sessionId - Session owning the dialog.
      * @param indices - chosen row indices.
      */
     setSelected(sessionId: SessionId, indices: readonly number[]): void;
     /**
-     * Toggle subagent descendant conversations appended to the rows.
+     * Copy the selected range in the chosen format.
      * @param sessionId - Session owning the dialog.
-     * @param includeSubagents - append child conversations.
-     * @returns after the rebuild settles (children are fetched on demand).
-     */
-    setIncludeSubagents(sessionId: SessionId, includeSubagents: boolean): Promise<void>;
-    /**
-     * Render the selected rows as Markdown and write it to the clipboard.
-     * @param sessionId - Session owning the dialog.
-     * @returns after the write settles; the dialog shows a check on success.
+     * @returns after the clipboard write settles.
      */
     copy(sessionId: SessionId): Promise<void>;
     /**
-     * Render the selected rows in the chosen format and download them as a file.
+     * Download the selected range in the chosen format.
      * @param sessionId - Session owning the dialog.
-     * @returns after the browser save starts.
+     * @returns after the browser save starts or the failure is published.
      */
     download(sessionId: SessionId): Promise<void>;
-    /** Rasterize the artifact HTML into a PNG download. */
-    private downloadPng;
     /**
-     * Abort active loads and reach quiescence.
+     * Abort active reads and reach quiescence.
      * @returns after every active operation settles.
      */
     dispose(): Promise<void>;
+    private load;
+    private payloadOf;
+    private rebuild;
+    private capRows;
+    private selection;
+    private renderOptions;
+    private downloadPng;
     private entry;
-    /** Build the bounded row list from raw history (newest SHARE_MAX_MESSAGES). */
-    private buildRows;
-    /** Parent rows plus one section header and message tail per subagent child. */
-    private buildRowsWithSubagents;
-    /** The rows the current selection mode exports: range or multi-select union. */
-    private selectedRows;
-    /** Apply the current options to a row list: tool rows filtered, redaction applied. */
-    private applyOptions;
-    /** The selected inclusive range of the dialog's message list. */
-    private range;
-    private metaOf;
-    private resolveImages;
-    private run;
-    /** Load the whole shareable chat and hand it to the browser save operation. */
-    private loadAllTxt;
-    /** Save the already-loaded shareable chat as one plain-text file. */
-    private downloadAllTxt;
-    private saveTxtBlob;
-    private loadRaw;
-    private readPage;
     private publish;
 }
 //# sourceMappingURL=controller.d.ts.map

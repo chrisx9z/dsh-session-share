@@ -1,10 +1,8 @@
 /** Locale namespace owned by the chat-segment share browser dialog. */
-export declare const NS = "session-chat-share";
-/** Simplified-Chinese chat-share strings. */
+export declare const NS = "session-share";
+/** Simplified-Chinese session-share strings. */
 export declare const zh: {
     readonly 'header.label': "分享";
-    readonly 'menu.share': "分享";
-    readonly 'menu.saveTxt': "保存 TXT";
     readonly 'dialog.title': "分享聊天片段";
     readonly 'dialog.description': "选择消息范围，以 Markdown、HTML 或 TXT 复制或下载。";
     readonly 'dialog.loading': "正在加载消息…";
@@ -24,6 +22,9 @@ export declare const zh: {
     readonly 'dialog.preview': "预览";
     readonly 'dialog.copy': "复制";
     readonly 'dialog.copied': "已复制";
+    readonly 'dialog.markdownCopy': "复制";
+    readonly 'dialog.markdownCopied': "已复制";
+    readonly 'dialog.markdownFootnotes': "脚注";
     readonly 'dialog.download': "下载";
     readonly 'dialog.close': "关闭";
     readonly options: "选项";
@@ -37,7 +38,7 @@ export declare const zh: {
     readonly 'role.subagent': "子代理";
     readonly 'artifact.sharedFrom': "分享自 DeepSeek Harness";
 };
-/** English chat-share strings. */
+/** English session-share strings. */
 export declare const en: Record<keyof typeof zh, string>;
 /** Stable locale keys consumed by the shared modal. */
 export type SessionChatShareKey = keyof typeof zh;

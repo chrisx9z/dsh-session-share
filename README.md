@@ -1,54 +1,59 @@
-# dsh-chat-share
+# dsh-session-share
 
 English | [中文](README.zh.md)
 
-Share a selected range of chat messages as Markdown, HTML, or plain text — a community plugin for
+Share a selected range of chat messages as Markdown, HTML, TXT, or PNG — a community plugin for
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (tagged
 [`dsh-plugin`](https://github.com/topics/dsh-plugin) and listed in the
 [awesome-dsh-plugin](https://awesome-dsh-plugin.com) market registry).
 
 This repository is the **standalone distribution** of the plugin: it ships both halves prebuilt
 (`lib/`), installable with `dsh plugin add` and from the Plugin Market. The reference
-implementation lives in the harness repository as `packages/session-query/session-chat-share`
-(branch `feat/session-chat-share` on the upstream fork), where both halves are built and tested.
+implementation lives in the harness repository as `packages/session-query/session-chat-share`,
+where both halves are built and tested.
+
+Compatibility: **DeepSeek Harness 0.1.6-alpha.2 or later**. The plugin reads session data through
+the host's session-query service and one payload route, and contributes to the Session Header's
+utilities slot. For older harness versions (0.1.0-rc.x), use `dsh-session-share@1.3.0`.
 
 ## What it does
 
 - Registers the Web `/share` slash command — plain `/share` opens the dialog, `/share txt` saves
   the whole chat as one `.txt`, `/share last <n>` saves only the newest `n` messages (combine:
   `/share txt last 10`).
-- The **browser half** adds a **Share** action to the Session Header, a **Share** row, and a
-  **Save TXT** row to each session's sidebar `...` menu (through the `sessionRowMenu` registry
-  provided by ui-workspace). The dialog lists the session's shareable messages (append-origin
-  `user/message` and `assistant/message` text), lets you pick an inclusive range via From/To
-  selects or by clicking message rows, choose Markdown, HTML, or TXT, preview the rendered
-  artifact (GFM), then copy it to the clipboard or download it as a file (`.md` / `.html` /
-  `.txt`). Options: **redact sensitive info** (credential shapes and local absolute/home paths,
-  on by default) and **include tool calls** (bounded tool-call rows, off by default).
-  **Save TXT** downloads the whole chat as one `.txt` file directly, without opening the dialog.
-  Nothing is uploaded: the recipient opens the artifact directly.
+- The **browser half** adds a **Share** action to the Session Header. The dialog lists the
+  session's shareable messages (append-origin `user/message` and `assistant/message` text), lets
+  you pick an inclusive range via From/To selects or by clicking message rows — or switch to
+  **multi-select mode** to export the union of chosen rows — choose Markdown, HTML, TXT, or PNG,
+  preview the rendered artifact (GFM), then copy it to the clipboard or download the file
+  (`.md` / `.html` / `.txt` / `.png`). Nothing is uploaded: the recipient opens the artifact
+  directly.
+- Options: **redact sensitive info** (credential shapes and local absolute/home paths, on by
+  default), **include tool calls** (bounded tool-call rows, off by default), and **include
+  subagent conversations** (child sessions appended with section headers, off by default).
 - The HTML artifact is a self-contained page with **GFM-lite** rendering (headings, lists,
   tables, blockquotes, links, fenced code, inline code/emphasis) and **session images embedded
-  as data URIs**; artifact headers carry the Session title and last model route when known, and
-  follow the active UI locale.
+  as data URIs**; artifacts follow the active UI locale. PNG is the HTML artifact rasterized as
+  one long image.
 - Optional host-side **auto-save**: with `autoSaveDir` configured on the plugin row, one TXT per
-  Session is written after every completed turn.
-- History is read through the ordinary `session.history` RPC and images through
-  `session.attachment` — no Host endpoint, no persistence changes, and no model involvement. The
-  command stays on the human-command plane with zero token effect.
+  session is written after every completed turn.
+- Session data is read **cold-safely through the host's session-query service**, so an export
+  covers the whole session no matter what the browser has paged into the transcript — no
+  persistence changes and no model involvement. The command stays on the human-command plane with
+  zero token effect.
 
 ## Install
 
 **npm** (preferred — the Plugin Market prefers npm sources):
 
 ```sh
-dsh plugin --profile demo add dsh-chat-share
+dsh plugin --profile demo add dsh-session-share
 ```
 
 **GitHub** (alternative; ships the same prebuilt artifacts):
 
 ```sh
-dsh plugin --profile demo add github:chrisx9z/dsh-chat-share#v1.3.0
+dsh plugin --profile demo add github:chrisx9z/dsh-session-share#v1.4.0
 ```
 
 The package ships **prebuilt artifacts** (`lib/` — host and browser halves), so neither install
@@ -62,18 +67,18 @@ Then use it in any session of that profile:
 
 ### Plugin Market
 
-The plugin is listed in the [awesome-dsh-plugin](https://awesome-dsh-plugin.com) registry (PR
-submission), so it appears in **Settings → Plugin Market** — browse, one-click install, and
-updates once the catalog refreshes (usually within a day of the registry PR merging). The npm
-source above makes market installs resolve to the published package.
+The plugin is listed in the [awesome-dsh-plugin](https://awesome-dsh-plugin.com) registry, so it
+appears in **Settings → Plugin Market** — browse, one-click install, and updates once the catalog
+refreshes (usually within a day of a registry change). The npm source above makes market installs
+resolve to the published package.
 
 ## Browser-half requirements
 
-The installed package's browser half is picked up by the host's `dsh.client` scan, so the
-Header button, dialog, and sidebar menu entries work on hosts whose composition includes it.
-The sidebar `...` menu rows need ui-workspace's `sessionRowMenu` service — present in dsh web
-builds after 2026-08-18 (and in source checkouts of the harness). On older releases only the
-`/share` command is active until the host is updated.
+The installed package's browser half is picked up by the host's `dsh.client` scan, so the Header
+button and its dialog work on hosts whose composition includes it. Its imports are limited to
+platform modules every web build provides (`@deepseek-ai/dsh-client-store`,
+`@deepseek-ai/dsh-client-ui-primitives`, React), plus a bundled copy of `html-to-image` used for
+PNG export.
 
 For the official distribution path (the harness repository's own web bundle), integrate the
 package as `packages/session-query/session-chat-share` and compose the `chat-share` row in
@@ -81,20 +86,24 @@ package as `packages/session-query/session-chat-share` and compose the `chat-sha
 
 ## How it works
 
-- Host half (`src/index.ts`): registers `/share` on the human-command plane. No arguments are
-  accepted; the dialog owns range selection.
-- Browser half (`src/client/`): a controller pages `session.history` from the tail (up to 300
-  shareable messages), keeps per-session dialog state, renders the range with pure renderers
-  (`render.ts`) into Markdown (verbatim text under role headers), a self-contained HTML page
-  (paragraphs + fenced code blocks), or plain text (TXT), and copies/downloads the artifact.
-- The invariant companion (`src/invariant.ts`) registers the package's no-op runtime invariant,
-  matching the harness convention.
+- Host half (`src/index.ts`): registers `/share` on the human-command plane and serves
+  `GET /api/session.share?sessionId=<id>&includeSubagents=<bool>`. The route observes the session
+  through `sessionQuery` (live or cold), folds durable events into shareable messages
+  (`user/message`, `assistant/message`, append-origin `tool/call`), appends direct subagent
+  children when asked, and inlines referenced images as base64. With `autoSaveDir` configured it
+  also writes one TXT per session after each completed turn.
+- Browser half (`src/client/`): a controller fetches that payload once per session, keeps
+  per-session dialog state, filters rows by the dialog options, and renders the chosen range with
+  pure renderers (`render.ts`) into Markdown (verbatim text under role headers), a self-contained
+  HTML page (GFM-lite), plain text, or a PNG rasterization.
+- The dialog lists at most the newest 300 shareable rows and says so; direct saves (`/share txt`)
+  always export the whole chat.
 
 ## Development and tests
 
-The 41 package tests (command, controller, renderers, dialog, header action, row-menu actions,
-invariant, and a real Loader composition) run inside a deepseek-harness checkout where the
-`@deepseek-ai/*` workspace dependencies resolve:
+The package's test suite (command and payload-route behaviour, controller state, renderers,
+dialog, header action, and a real Loader composition) runs inside a deepseek-harness checkout
+where the `@deepseek-ai/*` workspace dependencies resolve:
 
 ```sh
 pnpm exec vitest run packages/session-query/session-chat-share
@@ -102,14 +111,14 @@ pnpm exec vitest run packages/session-query/session-chat-share
 
 ## Limitations
 
-- The dialog reads up to 300 shareable messages from the log tail; older messages are out of scope
-  for one snippet.
+- The dialog lists up to 300 shareable rows; older messages stay reachable through direct saves,
+  which always export the whole chat.
 - Sharing is a copy/download artifact, not a hosted link: nothing is uploaded to a server.
-- HTML output is deliberately basic (paragraphs and fenced code blocks); inline markdown such as
-  emphasis and links stays as literal text in the HTML artifact, while the Markdown artifact keeps
-  it verbatim.
-- Images are represented by an `[image]` marker; tool calls, tool results, boundary markers, and
-  compaction-replaced copies are excluded.
+- Redaction is best-effort pattern matching, not a guarantee; review the artifact before sharing.
+- Message text is shared as rendered on the surface; reasoning text and tool results are not
+  included (tool calls only, opt-in).
+- The sidebar session-row `...` menu entries that older harness versions supported are gone, since
+  harness 0.1.6 no longer exposes a session-row menu registry to plugins.
 
 ## License
 

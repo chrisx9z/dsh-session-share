@@ -1,5 +1,9 @@
-/** Browser plugin owning the chat-segment share dialog, its controller, and the Header entry. */
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client';
+/**
+ * Browser half of chat-segment share: the Session-header share action and the
+ * modal it opens. Rows arrive from the host share route, so this half owns only
+ * presentation, format choice, and the browser-side save.
+ */
+import type { Context as ClientContext } from '@deepseek-ai/cordis';
 import { ChatShareController } from './controller.ts';
 import { type SessionChatShareKey } from './locales.ts';
 declare module '@deepseek-ai/cordis' {
@@ -9,14 +13,15 @@ declare module '@deepseek-ai/cordis' {
 }
 declare module '@deepseek-ai/dsh-client-ui-slots' {
     interface LocaleNamespaceMap {
-        'session-chat-share': SessionChatShareKey;
+        'session-share': SessionChatShareKey;
     }
 }
 export type { ChatShareEntry, ChatShareState, ShareFormat, ShareMessage } from './controller.ts';
+/** Required services for the dictionaries and the header-slot contribution. */
 export declare const inject: string[];
 /**
  * Provide the share controller and mount its dialog into the Session Header.
- * @param ctx - browser context carrying slots, locale, and connection services.
+ * @param ctx - browser context carrying slots and locale services.
  */
 export declare function apply(ctx: ClientContext): void;
 //# sourceMappingURL=index.d.ts.map
