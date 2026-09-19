@@ -11,7 +11,7 @@
 ## 功能
 
 - 注册 Web `/share` 斜杠命令：`/share` 打开对话框，`/share txt` 将整个聊天保存为一个 `.txt`，`/share last <n>` 只保存最新的 `n` 条消息（可组合：`/share txt last 10`）。
-- **浏览器半区**在 Session Header 添加 **Share** 按钮。对话框列出会话中可分享的消息（追加来源的 `user/message` 与 `assistant/message` 文本），可通过 From/To 下拉框或点击消息行选择闭区间范围——也可切换到**多选模式**导出所选行的并集——选择 Markdown、HTML、TXT 或 PNG，预览渲染结果（GFM），然后复制到剪贴板或下载为文件（`.md` / `.html` / `.txt` / `.png`）。不会上传任何内容：接收方直接打开产物即可。
+- **浏览器半区**在 Session Header 添加 **Share** 按钮；若 harness 的 ui-workspace 提供 `sessionRowMenu` 贡献注册表，还会向每个会话的侧边栏 `...` 菜单添加 **分享** 与 **保存 TXT** 两项。对话框列出会话中可分享的消息（追加来源的 `user/message` 与 `assistant/message` 文本），可通过 From/To 下拉框或点击消息行选择闭区间范围——也可切换到**多选模式**导出所选行的并集——选择 Markdown、HTML、TXT 或 PNG，预览渲染结果（GFM），然后复制到剪贴板或下载为文件（`.md` / `.html` / `.txt` / `.png`）。不会上传任何内容：接收方直接打开产物即可。
 - 选项：**脱敏敏感信息**（凭据形态与本地绝对/家目录路径，默认开启）、**包含工具调用**（有界工具调用行，默认关闭）、**包含子代理对话**（子会话以分节标题追加，默认关闭）。
 - HTML 产物是自包含页面，具备 **GFM-lite** 渲染（标题、列表、表格、引用、链接、围栏代码、行内代码/强调），并把**会话图片以 data URI 内嵌**；产物跟随当前 UI 语言。PNG 是把 HTML 产物栅格化成长图。
 - 可选的 host 端**自动保存**：在插件行上配置 `autoSaveDir` 后，每个回合结束都会为每个会话写一个 TXT。
@@ -28,7 +28,7 @@ dsh plugin --profile demo add dsh-session-chat-share
 **GitHub**（备选；附带相同的预构建产物）：
 
 ```sh
-dsh plugin --profile demo add github:chrisx9z/dsh-session-chat-share#v1.4.3
+dsh plugin --profile demo add github:chrisx9z/dsh-session-chat-share#v1.4.4
 ```
 
 包内已带**预构建产物**（`lib/`——host 与 browser 两个半区），两种安装都不需要构建步骤。发布版本以 `v1.x.y` 标记；如需可复现安装，可固定 tag 或 commit。
@@ -69,7 +69,7 @@ pnpm exec vitest run packages/session-query/session-chat-share
 - 分享是复制/下载产物，而非托管链接：不上传任何内容到服务器。
 - 脱敏是尽力而为的模式匹配，不构成保证；分享前请自行检查产物。
 - 消息文本按界面呈现分享；推理文本与工具结果不包含在内（仅工具调用，需显式开启）。
-- 早期 harness 版本支持的侧边栏会话行 `...` 菜单项已不再提供，因为 harness 0.1.6 不再向插件开放会话行菜单注册表。
+- 侧边栏 `...` 菜单项需要 harness 的 ui-workspace 提供 `sessionRowMenu` 贡献注册表；在原始 harness 上插件仍会挂载，入口为 Header 按钮与 `/share`。
 
 ## License
 

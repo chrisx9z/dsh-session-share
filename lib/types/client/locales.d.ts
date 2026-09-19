@@ -4,6 +4,8 @@ export declare const NS = "session-chat-share";
 /** Simplified-Chinese session-chat-share strings. */
 export declare const zh: {
     readonly 'header.label': "分享";
+    readonly 'menu.share': "分享";
+    readonly 'menu.saveTxt': "保存 TXT";
     readonly 'dialog.title': "分享聊天片段";
     readonly 'dialog.description': "选择消息范围，以 Markdown、HTML 或 TXT 复制或下载。";
     readonly 'dialog.loading': "正在加载消息…";

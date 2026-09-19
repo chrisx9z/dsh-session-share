@@ -21,7 +21,7 @@ utilities slot. Harness `0.1.0-rc.x` needs the previous `dsh-chat-share` package
 - Registers the Web `/share` slash command — plain `/share` opens the dialog, `/share txt` saves
   the whole chat as one `.txt`, `/share last <n>` saves only the newest `n` messages (combine:
   `/share txt last 10`).
-- The **browser half** adds a **Share** action to the Session Header. The dialog lists the
+- The **browser half** adds a **Share** action to the Session Header and, on a harness whose ui-workspace carries the `sessionRowMenu` contribution registry, **Share** and **Save TXT** rows to each session's sidebar `...` menu. The dialog lists the
   session's shareable messages (append-origin `user/message` and `assistant/message` text), lets
   you pick an inclusive range via From/To selects or by clicking message rows — or switch to
   **multi-select mode** to export the union of chosen rows — choose Markdown, HTML, TXT, or PNG,
@@ -53,7 +53,7 @@ dsh plugin --profile demo add dsh-session-chat-share
 **GitHub** (alternative; ships the same prebuilt artifacts):
 
 ```sh
-dsh plugin --profile demo add github:chrisx9z/dsh-session-chat-share#v1.4.3
+dsh plugin --profile demo add github:chrisx9z/dsh-session-chat-share#v1.4.4
 ```
 
 The package ships **prebuilt artifacts** (`lib/` — host and browser halves), so neither install
@@ -117,8 +117,9 @@ pnpm exec vitest run packages/session-query/session-chat-share
 - Redaction is best-effort pattern matching, not a guarantee; review the artifact before sharing.
 - Message text is shared as rendered on the surface; reasoning text and tool results are not
   included (tool calls only, opt-in).
-- The sidebar session-row `...` menu entries that older harness versions supported are gone, since
-  harness 0.1.6 no longer exposes a session-row menu registry to plugins.
+- The sidebar `...` menu rows need a harness whose ui-workspace carries the `sessionRowMenu`
+  contribution registry. On a stock harness the plugin still mounts and the Header action plus `/share`
+  remain the entry points.
 
 ## License
 
